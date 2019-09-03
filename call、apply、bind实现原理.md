@@ -1,6 +1,143 @@
-### call
+## call
 
-- 1
-- 2
-- 3
-- 4
+### 介绍：call()方法是在使用一个指定的this值和若干个指定参数值的前提下调用某个函数或方法。
+
+#### 举个例子
+
+```
+    var foo = {
+        value: 1
+    }
+
+    function bar() {
+        console.log(this.bar);
+    }
+
+    bar.call(foo); // 1
+```
+
+#### 注意两点
+- 1、call改变了this指向，指向到了foo
+- 2、bar函数执行了
+
+### 模拟实现第一步
+
+#### 试想当调用call的时候，把foo对象改造成如下：
+
+```
+    var foo = {
+        value: 1,
+        bar: function () {
+            console.log(this.value);
+        }
+    };
+    foo.bar(); // 1
+```
+
+#### 这个时候this指向了foo，但是却给foo对象增加了一个属性！不过不用担心，我们用delete再删掉就好了
+
+#### 所以模拟步骤可以分为：
+
+- 1、将函数设为对象的属性
+- 2、执行该函数
+- 3、删除该函数
+
+#### 以上这个例子，就是：
+
+```
+    // 第一步
+    foo.fn = bar
+    // 第二步
+    foo.fn()
+    // 第三步
+    delete foo.fn
+```
+
+#### fn是对象的属性名，反正最后也要删除它，所以起成什么都无所谓。
+
+#### 根据这个思路，可以尝试着去写第一版call2函数：
+
+```
+    // 第一版
+    Function.prototype.call = function (context) {
+        context.fn = this;
+        context.fn();
+        delete context.fn;
+    }
+    
+    // 测试一下
+    var foo = {
+        value: 1
+    };
+
+    function bar () {
+        console.log(this.value)
+    };
+
+    bar.call2(foo);
+```
+
+### 模拟实现第二步
+
+#### call函数还能给定参数执行函数，举个例子
+
+```
+    var foo = {
+        value: 1
+    };
+
+    function bar(name, age) {
+        console.log(name);
+        console.log(age);
+        console.log(this.value);
+    }
+
+    bar.call(foo, 'jack', 18);
+```
+
+#### 如果传入的参数不确定，怎么办？
+
+#### 可以从Arguments对象中取值，取出第二个到最后一个参数，然后放到一个数组里
+
+#### 比如这样：
+
+```
+    let arguments = {
+        0: 'foo',
+        1: 'jack',
+        2: 18,
+        length: 3
+    };
+
+    let args = [];
+    for (let i = 1; i < arguments.length; i++) {
+        args.push(arguments[i]);
+    }
+    // args ["jack", 18];
+```
+
+```
+    // 第二版
+    Function.prototype.call2 = function(context) {
+        context.fn = this;
+        let args = [];
+        for (let i = 1; i < arguments.length; i++) {
+            args.push(arguments[i]);
+        }
+        context.fn(...args);
+        delete context.fn;
+    }
+
+    var foo = {
+        value: 1
+    };
+
+    function bar(name, age) {
+        console.log(name);
+        console.log(age);
+        console.log(this.value);
+    }
+
+    bar.call(foo, 'jack', 18)
+
+```
